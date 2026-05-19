@@ -95,11 +95,11 @@ namespace Vampire
                 yield return null;
             }
 
-            monster.Rigidbody.drag *= chargeSpeed/2;
+            monster.Rigidbody.linearDamping *= chargeSpeed/2;
             //monster.Animator.StopAnimating();
             yield return new WaitForSeconds(chargeCooldown);
             //monster.Animator.StartAnimating();
-            monster.Rigidbody.drag /= chargeSpeed/2;
+            monster.Rigidbody.linearDamping /= chargeSpeed/2;
 
             charging = false;
         }

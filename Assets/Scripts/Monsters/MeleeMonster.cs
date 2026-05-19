@@ -5,13 +5,12 @@ namespace Vampire
 {
     public class MeleeMonster : Monster
     {
-        protected new MeleeMonsterBlueprint monsterBlueprint;
+        protected MeleeMonsterBlueprint MeleeBlueprint => (MeleeMonsterBlueprint)monsterBlueprint;
         protected float timeSinceLastAttack;
 
         public override void Setup(int monsterIndex, Vector2 position, MonsterBlueprint monsterBlueprint, float hpBuff = 0)
         {
             base.Setup(monsterIndex, position, monsterBlueprint, hpBuff);
-            this.monsterBlueprint = (MeleeMonsterBlueprint) monsterBlueprint;
         }
 
         protected override void Update()
@@ -25,7 +24,7 @@ namespace Vampire
         {
             base.FixedUpdate();
             Vector2 moveDirection = (playerCharacter.transform.position - transform.position).normalized;
-            rb.velocity += moveDirection * monsterBlueprint.acceleration * Time.fixedDeltaTime;
+            rb.linearVelocity += moveDirection * monsterBlueprint.acceleration * Time.fixedDeltaTime;
             entityManager.Grid.UpdateClient(this);
 
             // Vector2 f = Vector2.zero;
@@ -50,7 +49,7 @@ namespace Vampire
 
         void OnCollisionStay2D(Collision2D col)
         {
-            if (alive && ((monsterBlueprint.meleeLayer & (1 << col.collider.gameObject.layer)) != 0) && timeSinceLastAttack >= 1.0f/monsterBlueprint.atkspeed)
+            if (alive && ((MeleeBlueprint.meleeLayer & (1 << col.collider.gameObject.layer)) != 0) && timeSinceLastAttack >= 1.0f/monsterBlueprint.atkspeed)
             {
                 playerCharacter.TakeDamage(monsterBlueprint.atk);
                 timeSinceLastAttack = Mathf.Repeat(timeSinceLastAttack, 1.0f/monsterBlueprint.atkspeed);

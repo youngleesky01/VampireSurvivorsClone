@@ -48,6 +48,7 @@ namespace Vampire
         private InfiniteBackground infiniteBackground;
         private FastList<Monster> livingMonsters;
         private FastList<Collectable> magneticCollectables;
+        private FastList<ExpGem> activeExpGems;
         public FastList<Chest> chests; 
         private float timeSinceLastMonsterSpawned;
         private float timeSinceLastChestSpawned;
@@ -58,6 +59,7 @@ namespace Vampire
         private SpatialHashGrid grid;
         public FastList<Monster> LivingMonsters { get => livingMonsters; }
         public FastList<Collectable> MagneticCollectables { get => magneticCollectables; }
+        public FastList<ExpGem> ActiveExpGems { get => activeExpGems; }
         public Inventory Inventory { get => inventory; }
         public AbilitySelectionDialog AbilitySelectionDialog { get; private set; }
         public SpatialHashGrid Grid { get => grid; }
@@ -81,6 +83,7 @@ namespace Vampire
             // Init fast lists
             livingMonsters = new FastList<Monster>();
             magneticCollectables = new FastList<Collectable>();
+            activeExpGems = new FastList<ExpGem>();
             chests = new FastList<Chest>();
             
             // Initialize a monster pool for each monster prefab
@@ -278,11 +281,13 @@ namespace Vampire
         {
             ExpGem newGem = expGemPool.Get();
             newGem.Setup(position, gemType, spawnAnimation);
+            activeExpGems.Add(newGem);
             return newGem;
         }
 
         public void DespawnGem(ExpGem gem)
         {
+            activeExpGems.Remove(gem);
             expGemPool.Release(gem);
         }
 

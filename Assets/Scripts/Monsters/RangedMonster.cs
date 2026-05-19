@@ -12,7 +12,7 @@ namespace Vampire
         }
 
         [SerializeField] protected Transform projectileSpawnPosition;
-        protected new RangedMonsterBlueprint monsterBlueprint;
+        protected RangedMonsterBlueprint RangedBlueprint => (RangedMonsterBlueprint)monsterBlueprint;
         protected float timeSinceLastAttack;
         protected State state;
         protected float outOfRangeTime;
@@ -21,8 +21,7 @@ namespace Vampire
         public override void Setup(int monsterIndex, Vector2 position, MonsterBlueprint monsterBlueprint, float hpBuff = 0)
         {
             base.Setup(monsterIndex, position, monsterBlueprint, hpBuff);
-            this.monsterBlueprint = (RangedMonsterBlueprint) monsterBlueprint;
-            projectileIndex = entityManager.AddPoolForProjectile(this.monsterBlueprint.projectilePrefab);
+            projectileIndex = entityManager.AddPoolForProjectile(RangedBlueprint.projectilePrefab);
             outOfRangeTime = 0;
         }
 
@@ -37,9 +36,9 @@ namespace Vampire
                 switch (state)
                 {
                     case State.Walking:
-                        rb.velocity += dirToPlayer * monsterBlueprint.acceleration * Time.fixedDeltaTime;
+                        rb.linearVelocity += dirToPlayer * monsterBlueprint.acceleration * Time.fixedDeltaTime;
                         entityManager.Grid.UpdateClient(this);
-                        if (distance <= monsterBlueprint.range)
+                        if (distance <= RangedBlueprint.range)
                         {
                             state = State.Shooting;
                             monsterSpriteAnimator.StopAnimating();
@@ -56,11 +55,11 @@ namespace Vampire
                             LaunchProjectile(dirToPlayer);
                             timeSinceLastAttack = 0;//Mathf.Repeat(timeSinceLastAttack, 1.0f/monsterBlueprint.atkspeed);
                         }
-                        if (distance <= monsterBlueprint.range)
+                        if (distance <= RangedBlueprint.range)
                             outOfRangeTime = 0;
                         else
                             outOfRangeTime += Time.deltaTime;
-                        if (outOfRangeTime > monsterBlueprint.timeAllowedOutsideRange)
+                        if (outOfRangeTime > RangedBlueprint.timeAllowedOutsideRange)
                         {
                             state = State.Walking;
                             monsterSpriteAnimator.StartAnimating();
@@ -76,7 +75,7 @@ namespace Vampire
 
         protected void LaunchProjectile(Vector2 direction)
         {
-            Projectile projectile = entityManager.SpawnProjectile(projectileIndex, projectileSpawnPosition.position, monsterBlueprint.atk, 0, monsterBlueprint.projectileSpeed, monsterBlueprint.targetLayer);
+            Projectile projectile = entityManager.SpawnProjectile(projectileIndex, projectileSpawnPosition.position, monsterBlueprint.atk, 0, RangedBlueprint.projectileSpeed, RangedBlueprint.targetLayer);
             projectile.Launch(direction);
         }
     }

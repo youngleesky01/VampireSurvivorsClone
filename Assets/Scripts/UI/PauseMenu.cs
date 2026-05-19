@@ -18,14 +18,14 @@ namespace Vampire
             if (paused = !paused)
             {
                 if (!timeIsFrozen)
-                    Time.timeScale = 0;
+                    GameTimeController.PushFreezeSafe();
                 pauseButton.sprite = playSprite;
                 pauseMenu.SetActive(true);
             }
             else
             {
                 if (!timeIsFrozen)
-                    Time.timeScale = 1;
+                    GameTimeController.PopFreezeSafe();
                 pauseButton.sprite = pauseSprite;
                 pauseMenu.SetActive(false);
             }

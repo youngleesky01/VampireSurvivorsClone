@@ -20,6 +20,7 @@ namespace Vampire
         protected SpriteRenderer spriteRenderer;
 
         public TrailRenderer TrailRenderer { get => trailRenderer; }
+        public GemType GemType { get => gemType; }
 
         protected override void Awake()
         {

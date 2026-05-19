@@ -12,6 +12,28 @@ namespace Vampire
         protected Transform chestItemsParent;
         protected SpriteRenderer spriteRenderer;
         protected bool opened = false;
+        public bool IsOpened => opened;
+
+        public ChestTargetRing TargetRing => GetComponent<ChestTargetRing>();
+
+        public ChestTargetRing EnsureTargetRing(Sprite ringSprite, float ringDiameter)
+        {
+            ChestTargetRing ring = GetComponent<ChestTargetRing>();
+            if (ring == null)
+                ring = gameObject.AddComponent<ChestTargetRing>();
+            ring.Configure(ringSprite, ringDiameter);
+            return ring;
+        }
+
+        public void ShowTargetRing(ChestSeekMode mode)
+        {
+            TargetRing?.Show(mode);
+        }
+
+        public void HideTargetRing()
+        {
+            TargetRing?.Hide();
+        }
 
         public void Init(EntityManager entityManager, Character playerCharacter, Transform chestItemsParent)
         {
@@ -28,6 +50,7 @@ namespace Vampire
             transform.localScale = Vector3.one;
             spriteRenderer.sprite = chestBlueprint.closedChest;
             opened = false;
+            HideTargetRing();
             StartCoroutine(Appear());
         }
 
@@ -50,11 +73,26 @@ namespace Vampire
 
         public void OpenChest(bool openedByPlayer = true)
         {
-            if (!opened)
-            {
-                opened = true;
-                StartCoroutine(Open(openedByPlayer));
-            }
+            TryOpen(openedByPlayer, bypassAutoPlayGuard: false);
+        }
+
+        /// <summary>Called when the player manually sought this chest and arrived.</summary>
+        public void OpenChestFromManualSeek()
+        {
+            TryOpen(openedByPlayer: true, bypassAutoPlayGuard: true);
+        }
+
+        private void TryOpen(bool openedByPlayer, bool bypassAutoPlayGuard)
+        {
+            if (opened)
+                return;
+
+            if (openedByPlayer && !bypassAutoPlayGuard && !IsPlayerAllowedToOpenChest())
+                return;
+
+            opened = true;
+            HideTargetRing();
+            StartCoroutine(Open(openedByPlayer));
         }
 
         // This is some truly atrocious code: tread with caution.
@@ -95,10 +133,48 @@ namespace Vampire
 
         void OnCollisionEnter2D(Collision2D col)
         {
-            if (col.collider.gameObject == playerCharacter.gameObject)
-            {
+            if (IsPlayerCollider(col.collider))
                 OpenChest();
-            }
+        }
+
+        void OnTriggerEnter2D(Collider2D col)
+        {
+            if (IsPlayerCollider(col))
+                OpenChest();
+        }
+
+        void OnTriggerStay2D(Collider2D col)
+        {
+            if (IsPlayerCollider(col))
+                OpenChest();
+        }
+
+        private bool IsPlayerAllowedToOpenChest()
+        {
+            if (playerCharacter == null)
+                return false;
+
+            AutoPlayController autoPlay = playerCharacter.GetComponent<AutoPlayController>();
+            if (autoPlay == null)
+                autoPlay = FindFirstObjectByType<AutoPlayController>();
+
+            if (autoPlay == null || !autoPlay.AutoPlayEnabled)
+                return true;
+
+            PlayerChestSeeker seeker = playerCharacter.GetComponent<PlayerChestSeeker>();
+            if (seeker == null)
+                seeker = FindFirstObjectByType<PlayerChestSeeker>();
+
+            return seeker != null && seeker.IsManuallyCommanded;
+        }
+
+        private bool IsPlayerCollider(Collider2D col)
+        {
+            if (opened || playerCharacter == null || col == null)
+                return false;
+
+            Character character = col.GetComponentInParent<Character>();
+            return character != null && character == playerCharacter;
         }
     }
 }

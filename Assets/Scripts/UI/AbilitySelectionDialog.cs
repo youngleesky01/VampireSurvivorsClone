@@ -31,7 +31,7 @@ namespace Vampire
         {
             base.Open();
             menuOpen = true;
-            Time.timeScale = 0;
+            GameTimeController.PushFreezeSafe();
             pauseMenu.TimeIsFrozen = true;
             particles.SetActive(true);
 
@@ -73,7 +73,7 @@ namespace Vampire
         {
             abilityManager.ReturnAbilities(displayedAbilities);
             menuOpen = false;
-            Time.timeScale = 1;
+            GameTimeController.PopFreezeSafe();
             pauseMenu.TimeIsFrozen = false;
             particles.SetActive(false);
             base.Close();

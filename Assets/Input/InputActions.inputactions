@@ -1,5 +1,6 @@
 {
-    "name": "project_mgd_vampire",
+    "version": 1,
+    "name": "InputActions",
     "maps": [
         {
             "name": "Player",

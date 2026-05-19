@@ -12,7 +12,7 @@ namespace Vampire
         }
 
         [SerializeField] protected Transform throwableSpawnPosition;
-        protected new ThrowingMonsterBlueprint monsterBlueprint;
+        protected ThrowingMonsterBlueprint ThrowingBlueprint => (ThrowingMonsterBlueprint)monsterBlueprint;
         protected float timeSinceLastAttack;
         protected State state;
         protected float outOfRangeTime;
@@ -21,8 +21,7 @@ namespace Vampire
         public override void Setup(int monsterIndex, Vector2 position, MonsterBlueprint monsterBlueprint, float hpBuff = 0)
         {
             base.Setup(monsterIndex, position, monsterBlueprint, hpBuff);
-            this.monsterBlueprint = (ThrowingMonsterBlueprint) monsterBlueprint;
-            throwableIndex = entityManager.AddPoolForThrowable(this.monsterBlueprint.throwablePrefab);
+            throwableIndex = entityManager.AddPoolForThrowable(ThrowingBlueprint.throwablePrefab);
             outOfRangeTime = 0;
         }
 
@@ -37,8 +36,8 @@ namespace Vampire
                 switch (state)
                 {
                     case State.Walking:
-                        rb.velocity += dirToPlayer * monsterBlueprint.acceleration * Time.fixedDeltaTime;
-                        if (distance <= monsterBlueprint.range)
+                        rb.linearVelocity += dirToPlayer * monsterBlueprint.acceleration * Time.fixedDeltaTime;
+                        if (distance <= ThrowingBlueprint.range)
                         {
                             state = State.Shooting;
                             monsterSpriteAnimator.StopAnimating();
@@ -55,11 +54,11 @@ namespace Vampire
                             LaunchThrowable(playerCharacter.transform.position);
                             timeSinceLastAttack = 0;
                         }
-                        if (distance <= monsterBlueprint.range)
+                        if (distance <= ThrowingBlueprint.range)
                             outOfRangeTime = 0;
                         else
                             outOfRangeTime += Time.deltaTime;
-                        if (outOfRangeTime > monsterBlueprint.timeAllowedOutsideRange)
+                        if (outOfRangeTime > ThrowingBlueprint.timeAllowedOutsideRange)
                         {
                             state = State.Walking;
                             monsterSpriteAnimator.StartAnimating();
@@ -75,7 +74,7 @@ namespace Vampire
 
         protected void LaunchThrowable(Vector2 targetPosition)
         {
-            Throwable throwable = entityManager.SpawnThrowable(throwableIndex, throwableSpawnPosition.position, monsterBlueprint.atk, 0, -909, monsterBlueprint.targetLayer);
+            Throwable throwable = entityManager.SpawnThrowable(throwableIndex, throwableSpawnPosition.position, monsterBlueprint.atk, 0, -909, ThrowingBlueprint.targetLayer);
             targetPosition += playerCharacter.Velocity * throwable.ThrowTime;
             throwable.Throw(targetPosition);
         }

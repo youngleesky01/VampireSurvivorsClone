@@ -6,7 +6,7 @@ namespace Vampire
 {
     public class BossMonster : Monster
     {
-        protected new BossMonsterBlueprint monsterBlueprint;
+        protected BossMonsterBlueprint BossBlueprint => (BossMonsterBlueprint)monsterBlueprint;
         protected BossAbility[] abilities;
         protected Coroutine act = null;
         public Rigidbody2D Rigidbody { get => rb; }
@@ -16,11 +16,10 @@ namespace Vampire
         public override void Setup(int monsterIndex, Vector2 position, MonsterBlueprint monsterBlueprint, float hpBuff = 0)
         {
             base.Setup(monsterIndex, position, monsterBlueprint, hpBuff);
-            this.monsterBlueprint = (BossMonsterBlueprint) monsterBlueprint;
-            abilities = new BossAbility[this.monsterBlueprint.abilityPrefabs.Length];
+            abilities = new BossAbility[BossBlueprint.abilityPrefabs.Length];
             for (int i = 0; i < abilities.Length; i++)
             {
-                abilities[i] = Instantiate(this.monsterBlueprint.abilityPrefabs[i], transform).GetComponent<BossAbility>();
+                abilities[i] = Instantiate(BossBlueprint.abilityPrefabs[i], transform).GetComponent<BossAbility>();
                 abilities[i].Init(this, entityManager, playerCharacter);
             }
             act = StartCoroutine(Act());
@@ -40,12 +39,12 @@ namespace Vampire
 
         public void Move(Vector2 direction, float deltaTime)
         {
-            rb.velocity += direction * monsterBlueprint.acceleration * deltaTime;
+            rb.linearVelocity += direction * monsterBlueprint.acceleration * deltaTime;
         }
 
         public void Freeze()
         {
-            rb.velocity = Vector2.zero;
+            rb.linearVelocity = Vector2.zero;
         }
 
         private IEnumerator Act()
@@ -77,8 +76,8 @@ namespace Vampire
         protected override void DropLoot()
         {
             base.DropLoot();
-            if (monsterBlueprint.chestBlueprint != null)
-                entityManager.SpawnChest(monsterBlueprint.chestBlueprint, transform.position);
+            if (BossBlueprint.chestBlueprint != null)
+                entityManager.SpawnChest(BossBlueprint.chestBlueprint, transform.position);
         }
 
         public override IEnumerator Killed(bool killedByPlayer = true)
@@ -91,18 +90,18 @@ namespace Vampire
 
         void OnCollisionEnter2D(Collision2D col)
         {
-            if (((monsterBlueprint.meleeLayer & (1 << col.collider.gameObject.layer)) != 0))
+            if (((BossBlueprint.meleeLayer & (1 << col.collider.gameObject.layer)) != 0))
             {
                 IDamageable damageable = col.collider.GetComponentInParent<IDamageable>();
                 Vector2 knockbackDirection = (damageable.transform.position - transform.position).normalized;
-                if (timeSinceLastMeleeAttack > monsterBlueprint.meleeAttackDelay)
+                if (timeSinceLastMeleeAttack > BossBlueprint.meleeAttackDelay)
                 {
-                    damageable.TakeDamage(monsterBlueprint.meleeDamage, monsterBlueprint.meleeKnockback * knockbackDirection);
+                    damageable.TakeDamage(BossBlueprint.meleeDamage, BossBlueprint.meleeKnockback * knockbackDirection);
                     timeSinceLastMeleeAttack = 0;
                 }
                 else
                 {
-                    damageable.TakeDamage(0, monsterBlueprint.meleeKnockback * knockbackDirection);
+                    damageable.TakeDamage(0, BossBlueprint.meleeKnockback * knockbackDirection);
                 }
             }
 

@@ -80,9 +80,9 @@ namespace Vampire
             centerTransform.position = transform.position + (Vector3)monsterHitbox.offset;
             // Set the drag based on acceleration and movespeed
             float spd = Random.Range(monsterBlueprint.movespeed-0.1f, monsterBlueprint.movespeed+0.1f);
-            rb.drag = monsterBlueprint.acceleration / (spd * spd);
+            rb.linearDamping = monsterBlueprint.acceleration / (spd * spd);
             // Reset the velocity
-            rb.velocity = Vector2.zero;
+            rb.linearVelocity = Vector2.zero;
             StopAllCoroutines();
         }
 
@@ -99,7 +99,7 @@ namespace Vampire
 
         public override void Knockback(Vector2 knockback)
         {
-            rb.velocity += knockback * Mathf.Sqrt(rb.drag);
+            rb.linearVelocity += knockback * Mathf.Sqrt(rb.linearDamping);
         }
 
         public override void TakeDamage(float damage, Vector2 knockback = default(Vector2))
@@ -111,7 +111,7 @@ namespace Vampire
                 if (hitAnimationCoroutine != null) StopCoroutine(hitAnimationCoroutine);
                 if (knockback != default(Vector2))
                 {
-                    rb.velocity += knockback * Mathf.Sqrt(rb.drag);
+                    rb.linearVelocity += knockback * Mathf.Sqrt(rb.linearDamping);
                     knockedBack = true;
                 }
                 if (currentHealth > 0)

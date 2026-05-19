@@ -22,7 +22,8 @@ namespace Vampire
         {
             gravityWell.SetActive(true);
             throwableSpriteRenderer.enabled = false;
-            wellParticles.enableEmission = true;
+            var emission = wellParticles.emission;
+            emission.enabled = true;
             float currentRadius = 0;
             float t = 0;
             while (t < 1.0f)
@@ -51,7 +52,7 @@ namespace Vampire
                 yield return null;
             }
             gravityWell.transform.localScale = Vector2.zero;
-            wellParticles.enableEmission = false;
+            emission.enabled = false;
             gravityWell.SetActive(false);
             throwableSpriteRenderer.enabled = true;
             DestroyThrowable();

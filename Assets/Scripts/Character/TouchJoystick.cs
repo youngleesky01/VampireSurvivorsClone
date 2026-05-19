@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.InputSystem.OnScreen;
 using UnityEngine.InputSystem.Layouts;
+using UnityEngine.UI;
 
 namespace Vampire
 {
@@ -12,7 +13,9 @@ namespace Vampire
     /// </summary>
     public class TouchJoystick : OnScreenControl, IPointerDownHandler, IPointerUpHandler
     {
+        [SerializeField] private bool enableTouchMovement = false;
         [SerializeField] private bool permanent = false;
+        [SerializeField] private bool showJoystickVisual = false;
         [SerializeField] private float joystickRadius;
         [SerializeField] private RectTransform joystick, joystickBounds;
         [SerializeField] private UnityEvent<Vector2> onJoystickMoved;
@@ -27,35 +30,79 @@ namespace Vampire
         }
 
         private RectTransform controlRect;
-        private bool beingTouched = false;
-        private Vector2 initialTouchPosition;
+        private Image touchCaptureImage;
+        private bool beingTouched;
 
         public bool BeingTouched { get => beingTouched; }
+        public bool TouchMovementEnabled => enableTouchMovement;
 
         void Awake()
         {
             controlRect = GetComponent<RectTransform>();
+            touchCaptureImage = GetComponent<Image>();
+            ApplyTouchMovementState();
+        }
+
+        private void OnValidate()
+        {
+            if (controlRect == null)
+                controlRect = GetComponent<RectTransform>();
+            if (touchCaptureImage == null)
+                touchCaptureImage = GetComponent<Image>();
+            ApplyTouchMovementState();
+        }
+
+        public void SetTouchMovementEnabled(bool enabled)
+        {
+            enableTouchMovement = enabled;
+            ApplyTouchMovementState();
+        }
+
+        private void ApplyTouchMovementState()
+        {
+            if (!enableTouchMovement && beingTouched)
+                EndTouch();
+
+            if (touchCaptureImage != null)
+                touchCaptureImage.raycastTarget = enableTouchMovement;
+
+            ApplyJoystickVisualState();
+        }
+
+        private void ApplyJoystickVisualState()
+        {
+            if (!enableTouchMovement || !showJoystickVisual)
+            {
+                permanent = false;
+                if (joystick != null)
+                    joystick.gameObject.SetActive(false);
+                if (joystickBounds != null)
+                    joystickBounds.gameObject.SetActive(false);
+            }
         }
 
         void Update()
         {
-            if (beingTouched)
+            if (!enableTouchMovement || !beingTouched)
+                return;
+
+            if (Time.timeScale > 0)
             {
-                if (Time.timeScale > 0)
-                {
-                    Vector2 touchPosition;
-                    RectTransformUtility.ScreenPointToLocalPointInRectangle(controlRect, Input.mousePosition, null, out touchPosition);
-                    UpdateTouch(touchPosition);
-                }
-                else
-                {
-                    EndTouch();
-                }
+                Vector2 touchPosition;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(controlRect, Input.mousePosition, null, out touchPosition);
+                UpdateTouch(touchPosition);
+            }
+            else
+            {
+                EndTouch();
             }
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (!enableTouchMovement)
+                return;
+
             Vector2 touchPosition;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(controlRect, eventData.position, null, out touchPosition);
             StartTouch(permanent ? joystick.localPosition : touchPosition);
@@ -63,49 +110,65 @@ namespace Vampire
 
         public void OnPointerUp(PointerEventData eventData)
         {
+            if (!enableTouchMovement)
+                return;
+
             EndTouch();
         }
 
+        private Vector2 initialTouchPosition;
+
         public void StartTouch(Vector2 touchPosition)
         {
-            if (Time.timeScale > 0)
+            if (!enableTouchMovement || Time.timeScale <= 0)
+                return;
+
+            beingTouched = true;
+            initialTouchPosition = touchPosition;
+            joystick.localPosition = initialTouchPosition;
+            joystickBounds.localPosition = initialTouchPosition;
+            joystickBounds.sizeDelta = Vector2.one * joystickRadius * 2;
+            if (showJoystickVisual)
             {
-                beingTouched = true;
-                // Save the initial touch position
-                initialTouchPosition = touchPosition;
-                // Position the joystick
-                joystick.localPosition = initialTouchPosition;
-                joystickBounds.localPosition = initialTouchPosition;
-                // Size the joystick
-                joystickBounds.sizeDelta = Vector2.one * joystickRadius * 2;
-                // Enable the joystick
                 joystick.gameObject.SetActive(true);
                 joystickBounds.gameObject.SetActive(true);
-                // Invoke touch started callback
-                onStartTouch.Invoke();
             }
+            onStartTouch.Invoke();
         }
 
         public void UpdateTouch(Vector2 touchPosition)
         {
-            Vector2 joystickDelta = (touchPosition - initialTouchPosition);
+            if (!enableTouchMovement)
+                return;
+
+            Vector2 joystickDelta = touchPosition - initialTouchPosition;
             Vector2 moveDirection = joystickDelta.normalized;
-            // Update the joystick position, locking it within the joystick bounds
-            joystick.localPosition = joystickDelta.magnitude > joystickRadius ? initialTouchPosition + moveDirection * joystickRadius : touchPosition;
-            // Invoke on move callback
+            joystick.localPosition = joystickDelta.magnitude > joystickRadius
+                ? initialTouchPosition + moveDirection * joystickRadius
+                : touchPosition;
             onJoystickMoved.Invoke(moveDirection);
-            //SendValueToControl<Vector2>(moveDirection);
         }
 
         public void EndTouch()
         {
+            if (!beingTouched)
+                return;
+
             joystick.localPosition = joystickBounds.localPosition;
-            // Disable the joystick
-            joystick.gameObject.SetActive(permanent);
-            joystickBounds.gameObject.SetActive(permanent);
-            // Invoke touch ended callback
+            if (enableTouchMovement && showJoystickVisual)
+            {
+                joystick.gameObject.SetActive(permanent);
+                joystickBounds.gameObject.SetActive(permanent);
+            }
+            else
+            {
+                if (joystick != null)
+                    joystick.gameObject.SetActive(false);
+                if (joystickBounds != null)
+                    joystickBounds.gameObject.SetActive(false);
+            }
+
             onJoystickMoved.Invoke(Vector2.zero);
-            //SendValueToControl<Vector2>(Vector2.zero);
             onEndTouch.Invoke();
             beingTouched = false;
         }

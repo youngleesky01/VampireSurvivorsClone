@@ -58,7 +58,7 @@ namespace Vampire
         public UnityEvent<float> OnDealDamage { get; } = new UnityEvent<float>();
         public UnityEvent OnDeath { get; } = new UnityEvent();
         public CharacterBlueprint Blueprint { get => characterBlueprint; }
-        public Vector2 Velocity { get => rb.velocity; }
+        public Vector2 Velocity { get => rb.linearVelocity; }
         // Spatial Hash Grid Client Interface
         public Vector2 Position => transform.position;
         public Vector2 Size => meleeHitboxCollider.bounds.size;
@@ -119,7 +119,7 @@ namespace Vampire
             else
                 StopWalkAnimation();
             if (alive)
-                rb.velocity += moveDirection * characterBlueprint.acceleration * Time.deltaTime;
+                rb.linearVelocity += moveDirection * characterBlueprint.acceleration * Time.deltaTime;
         }
 
         public void GainExp(float exp)
@@ -178,7 +178,7 @@ namespace Vampire
 
         public override void Knockback(Vector2 knockback)
         {
-            rb.velocity += knockback * Mathf.Sqrt(rb.drag);
+            rb.linearVelocity += knockback * Mathf.Sqrt(rb.linearDamping);
         }
 
         public override void TakeDamage(float damage, Vector2 knockback = default(Vector2))
@@ -194,7 +194,7 @@ namespace Vampire
                 healthBar.SubtractPoints(damage);
                 currentHealth -= damage;
                 // Knockback
-                rb.velocity += knockback * Mathf.Sqrt(rb.drag);
+                rb.linearVelocity += knockback * Mathf.Sqrt(rb.linearDamping);
                 statsManager.IncreaseDamageTaken(damage);
                 if (currentHealth <= 0)
                 {
@@ -256,7 +256,7 @@ namespace Vampire
 
         public void UpdateMoveSpeed()
         {
-            rb.drag = characterBlueprint.acceleration / (movementSpeed.Value * movementSpeed.Value);
+            rb.linearDamping = characterBlueprint.acceleration / (movementSpeed.Value * movementSpeed.Value);
         }
 
         public void Move(Vector2 moveDirection)

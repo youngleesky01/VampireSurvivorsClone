@@ -6,7 +6,7 @@ namespace Vampire
     public class BoomerangMonster : Monster
     {
         [SerializeField] protected Transform boomerangSpawnPosition;
-        protected new BoomerangMonsterBlueprint monsterBlueprint;
+        protected BoomerangMonsterBlueprint BoomerangBlueprint => (BoomerangMonsterBlueprint)monsterBlueprint;
         protected float timeSinceLastBoomerangAttack;
         protected float timeSinceLastMeleeAttack;
         protected float outOfRangeTime;
@@ -15,8 +15,7 @@ namespace Vampire
         public override void Setup(int monsterIndex, Vector2 position, MonsterBlueprint monsterBlueprint, float hpBuff = 0)
         {
             base.Setup(monsterIndex, position, monsterBlueprint, hpBuff);
-            this.monsterBlueprint = (BoomerangMonsterBlueprint) monsterBlueprint;
-            boomerangIndex = entityManager.AddPoolForBoomerang(this.monsterBlueprint.boomerangPrefab);
+            boomerangIndex = entityManager.AddPoolForBoomerang(BoomerangBlueprint.boomerangPrefab);
             outOfRangeTime = 0;
         }
 
@@ -28,10 +27,10 @@ namespace Vampire
             Vector2 dirToPlayer = toPlayer/distance;
             entityManager.Grid.UpdateClient(this);
             timeSinceLastBoomerangAttack += Time.fixedDeltaTime;
-            if (distance <= monsterBlueprint.range)
+            if (distance <= BoomerangBlueprint.range)
             {
-                rb.velocity += dirToPlayer * monsterBlueprint.acceleration * Time.fixedDeltaTime / 2;
-                if (timeSinceLastBoomerangAttack >= 1.0f/monsterBlueprint.boomerangAttackSpeed)
+                rb.linearVelocity += dirToPlayer * monsterBlueprint.acceleration * Time.fixedDeltaTime / 2;
+                if (timeSinceLastBoomerangAttack >= 1.0f/BoomerangBlueprint.boomerangAttackSpeed)
                 {
                     ThrowBoomerang(playerCharacter.transform.position);
                     timeSinceLastBoomerangAttack = 0;
@@ -39,19 +38,19 @@ namespace Vampire
             }
             else
             {
-                rb.velocity += dirToPlayer * monsterBlueprint.acceleration * Time.fixedDeltaTime;
+                rb.linearVelocity += dirToPlayer * monsterBlueprint.acceleration * Time.fixedDeltaTime;
             }
         }
 
         protected void ThrowBoomerang(Vector2 targetPosition)
         {
-            Boomerang boomerang = entityManager.SpawnBoomerang(boomerangIndex, boomerangSpawnPosition.position, monsterBlueprint.boomerangDamage, 0, monsterBlueprint.throwRange, monsterBlueprint.throwTime, monsterBlueprint.targetLayer);
+            Boomerang boomerang = entityManager.SpawnBoomerang(boomerangIndex, boomerangSpawnPosition.position, BoomerangBlueprint.boomerangDamage, 0, BoomerangBlueprint.throwRange, BoomerangBlueprint.throwTime, BoomerangBlueprint.targetLayer);
             boomerang.Throw(boomerangSpawnPosition, targetPosition);
         }
 
         void OnCollisionStay2D(Collision2D col)
         {
-            if (((monsterBlueprint.targetLayer & (1 << col.collider.gameObject.layer)) != 0) && timeSinceLastMeleeAttack >= 1.0f/monsterBlueprint.atkspeed)
+            if (((BoomerangBlueprint.targetLayer & (1 << col.collider.gameObject.layer)) != 0) && timeSinceLastMeleeAttack >= 1.0f/monsterBlueprint.atkspeed)
             {
                 playerCharacter.TakeDamage(monsterBlueprint.atk);
                 timeSinceLastMeleeAttack = 0;

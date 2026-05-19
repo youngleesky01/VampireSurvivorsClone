@@ -44,10 +44,25 @@ namespace Vampire
             inventory.Init();
         }
 
+        void Awake()
+        {
+            EnsureGameplayInputComponents();
+        }
+
         // Start is called before the first frame update
         void Start()
         {
             Init(levelBlueprint);
+        }
+
+        private static void EnsureGameplayInputComponents()
+        {
+            if (FindObjectOfType<ChestInputRouter>() == null)
+            {
+                LevelManager levelManager = FindObjectOfType<LevelManager>();
+                if (levelManager != null)
+                    levelManager.gameObject.AddComponent<ChestInputRouter>();
+            }
         }
 
         // Update is called once per frame
@@ -99,7 +114,7 @@ namespace Vampire
 
         public void GameOver()
         {
-            Time.timeScale = 0;
+            GameTimeController.PushFreezeSafe();
             int coinCount = PlayerPrefs.GetInt("Coins");
             PlayerPrefs.SetInt("Coins", coinCount + statsManager.CoinsGained);
             gameOverDialog.Open(false, statsManager);
@@ -107,7 +122,7 @@ namespace Vampire
 
         public void LevelPassed(Monster finalBossKilled)
         {
-            Time.timeScale = 0;
+            GameTimeController.PushFreezeSafe();
             int coinCount = PlayerPrefs.GetInt("Coins");
             PlayerPrefs.SetInt("Coins", coinCount + statsManager.CoinsGained);
             gameOverDialog.Open(true, statsManager);
@@ -115,13 +130,19 @@ namespace Vampire
 
         public void Restart()
         {
-            Time.timeScale = 1;
+            if (GameTimeController.Instance != null)
+                GameTimeController.Instance.ResetForSceneLoad();
+            else
+                Time.timeScale = 1;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
         public void ReturnToMainMenu()
         {
-            Time.timeScale = 1;
+            if (GameTimeController.Instance != null)
+                GameTimeController.Instance.ResetForSceneLoad();
+            else
+                Time.timeScale = 1;
             SceneManager.LoadScene(0);
         }
     }
